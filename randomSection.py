@@ -10,15 +10,16 @@ def GenerateRegKey():
         file.write(newKey + "\n")
     return newKey
 
+
 def PerformingRandom(fileName, users):
     """
-    Randomes users and then writes results in the file
+    Randoms users and then writes results in the file
 
-    :param fileName: file which will be replaced with randomed version
+    :param fileName: file which will be replaced with randomized version
     :param users: list of users
     """
     with open("tickets/" + fileName, "w") as file:
-        file.write("Randomed\n")
+        file.write("Randomized\n")
         temp = len(users)
         for i in range(temp):
             j = random.randint(0, temp - i - 1)

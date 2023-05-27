@@ -1,3 +1,5 @@
+import os
+
 def ParseUsername(line, mode):
     """
     function uses to parse usernames from ticket files
@@ -12,3 +14,23 @@ def ParseUsername(line, mode):
                 return line[0:num]
             elif mode == 2:
                 return line[num + 1:-1]
+
+
+def IsUserAdmin(chatId):
+    with open("mods.txt", "r") as file:
+        mods = file.read()
+        mods = mods.split("\n")
+        admin_access = False
+        for i in mods:
+            if i == str(chatId):
+                admin_access = True
+    return admin_access
+
+
+def IsThereTickets():
+    """
+    :return: int value, 0 if no ticket, 1 if opposite
+    """
+    for _ in os.listdir('tickets'):
+        return 1
+    return 0

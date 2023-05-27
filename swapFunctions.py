@@ -1,6 +1,7 @@
 import os
 import Parsers
 
+
 def CheckPosition(fileName, chatid, place):
     """
     Checks is position valid
@@ -33,7 +34,7 @@ def SwapUsers(ticketName, asker, acceptor, acceptorId):
     accept = acceptor + ":" + acceptorId
     with open("tickets/" + ticketName, "w") as file:
         for i in lines:
-            if i == "Randomed\n":
+            if i == "randomized\n":
                 file.write(i)
                 continue
             if i[:-1] == asker:
