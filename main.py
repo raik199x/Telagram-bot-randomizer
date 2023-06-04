@@ -3,13 +3,17 @@ import os
 import randomSection
 import swapFunctions
 import Parsers
+from sharedVariables import *
 
 # TODO:
 # > Deleting reg key: check if key exists, if not - send message, if yes - show existing keys
 # > All keyboard: Create function for creating keyboards that will check if user admin and add admin buttons
-# > All files: create directory where bot will store all files
-# > Contacts: add contacts to the bot
 # > Swap: add more user-friendly interface
+# > add Unban user function
+# > CoinFlip
+# > roll
+# > custom list random
+# > random number generator
 
 """
 0 - entering master key
@@ -19,6 +23,8 @@ ADMIN MENU
 10 - changing master key
 11 - deleting reg key
 12 - banning user
+13 - modifying contacts
+14 - unbanning user
 ----------------------------
 TICKETS
 21 - creating ticket
@@ -49,7 +55,7 @@ def SecurityFileCheck(message):
         bot.send_message(
             message.chat.id, "Nice try, the issue was reported to the administrator")
 
-        with open("mods.txt", "r") as file:
+        with open(botDirectory + botModeratorsFile, "r") as file:
             for i in file.readlines():
                 bot.send_message(i, "User " + message.from_user.username + " with chat id " + str(
                     message.chat.id) + " tried to get access to the filesystem")
@@ -60,6 +66,21 @@ def SecurityFileCheck(message):
     return 0
 
 
+def CreateBotFiles():
+    os.mkdir(botDirectory)
+    with open(botDirectory + botMasterKeyFile, "w+") as file:
+        file.write("created_by_raik199x")
+    os.mkdir(botDirectory + botStatusDirectory)
+    os.mkdir(botDirectory + botTicketsDirectory)
+    os.touch(botDirectory + botModeratorsFile)
+    os.touch(botDirectory + botRegKeyFile)
+    os.touch(botDirectory + botBannedFile)
+    os.touch(botDirectory + botSwapFile)
+    with open(botDirectory + botSwapFile, "w+") as file:
+        file.write(
+            "https://github.com/raik199x/Bot-randomizer \n\nMade with enthusiasm by @raik199x")
+
+
 def CheckBanned(message):
     """
     Check if user is in banned state.
@@ -67,10 +88,17 @@ def CheckBanned(message):
     :param message: message that comes from user
     :return: 1 if banned, 0 if opposite
     """
-    with open("bans.txt", "r") as file:
-        for i in file.readlines():
-            if str(message.chat.id) == i[:-1]:
-                return 1
+    try:
+        file = open(botDirectory + botBannedFile, "r")
+    except FileNotFoundError:  # if file with bans is not found, we do not allow anyone to enter
+        bot.send_message(
+            message.chat.id, "Error occurred with bot database, please write to admin")
+        return 1
+
+    for i in file.readlines():
+        if str(message.chat.id) == i[:-1]:
+            return 1
+    file.close()
     return 0
 
 
@@ -89,7 +117,8 @@ ticketMenu_keyboard.add("Back")
 admin_keyboard = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
 admin_keyboard.add("Change master key")
 admin_keyboard.add("Create registration key", "Delete registration key")
-admin_keyboard.add("Ban user", "Send logs")
+admin_keyboard.add("Ban user", "Unban user")
+admin_keyboard.add("Modify contacts info")
 admin_keyboard.add("Back")
 
 answerIncomingSwap = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -120,7 +149,7 @@ def SetUserStatus(chatId, status):
     """
     if type(status) == int:
         status = str(status)
-    with open("currentStatus/" + str(chatId) + ".txt", "w") as file:
+    with open(botDirectory + botStatusDirectory + str(chatId) + ".txt", "w") as file:
         file.write(str(status))
 
 
@@ -132,7 +161,8 @@ def GetUserStatus(chatId):
     :return: status of user
     """
     try:
-        file = open("currentStatus/" + str(chatId) + ".txt", "r")
+        file = open(botDirectory + botStatusDirectory +
+                    str(chatId) + ".txt", "r")
     except FileNotFoundError:
         bot.send_message(chatId, "Error occurred, you are not found in this bot database, please write "
                          "command /start")
@@ -143,7 +173,7 @@ def GetUserStatus(chatId):
 
 
 def CheckRegKey(regKey):
-    with open("registration_keys.txt", "r") as file:
+    with open(botDirectory + botRegKeyFile, "r") as file:
         existingKeys = file.read()
         existingKeys = existingKeys.split("\n")
         for i in existingKeys:
@@ -161,7 +191,7 @@ def ShowUserTicketFile(fileName, message):
     """
     botMessage = fileName + "\nStatus: "
     isInTicket = 0
-    with open("tickets/" + fileName, "r") as file:
+    with open(botDirectory + botTicketsDirectory + fileName, "r") as file:
         status = file.readline()
         botMessage += status + "\nPeople:\n"
         if status[:-1] == "Active":
@@ -206,12 +236,12 @@ def GetTicketsKeyboard(message, mode):
     """
     existingTickets = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
     if mode == 1:
-        for i in os.listdir('tickets'):
+        for i in os.listdir(botDirectory + botTicketsDirectory):
             existingTickets.add(telebot.types.KeyboardButton(i))
     elif mode == 2:
-        for i in os.listdir('tickets'):
+        for i in os.listdir(botDirectory + botTicketsDirectory):
             isInTheTicket = 0
-            with open("tickets/" + i, "r") as file:
+            with open(botDirectory + botTicketsDirectory + i, "r") as file:
                 file.readline()
                 while True:
                     tempLine = file.readline()
@@ -223,13 +253,13 @@ def GetTicketsKeyboard(message, mode):
             if isInTheTicket == 0:
                 existingTickets.add(telebot.types.KeyboardButton(i))
     elif mode == 3:
-        for i in os.listdir('tickets'):
-            with open("tickets/" + i, "r") as file:
+        for i in os.listdir(botDirectory + botTicketsDirectory):
+            with open(botDirectory + botTicketsDirectory + i, "r") as file:
                 if file.readline() == "Active\n":
                     existingTickets.add(telebot.types.KeyboardButton(i))
     elif mode == 4:
-        for i in os.listdir('tickets'):
-            with open("tickets/" + i, "r") as file:
+        for i in os.listdir(botDirectory + botTicketsDirectory):
+            with open(botDirectory + botTicketsDirectory + i, "r") as file:
                 if file.readline() == "randomized\n":
                     existingTickets.add(telebot.types.KeyboardButton(i))
     existingTickets.add("Back to ticket menu")
@@ -241,7 +271,7 @@ def IsUserInRandom(message):
     :param message: message from user, function will take text from it
     :return: 0 if user is not in random, 1 if opposite
     """
-    with open("tickets/" + message.text, "r+") as file:
+    with open(botDirectory + botTicketsDirectory + message.text, "r+") as file:
         file.readline()
         while True:
             tempLine = file.readline()
@@ -257,7 +287,7 @@ def Notification(fileName):
 
     :param fileName: path to ended random file
     """
-    with open("tickets/" + fileName, "r") as file:
+    with open(botDirectory + botTicketsDirectory + fileName, "r") as file:
         content = file.readlines()
     content.remove(content[0])
     for num, i in enumerate(content):
@@ -268,28 +298,15 @@ def Notification(fileName):
 @bot.message_handler(commands=['start'])
 def FirstEnter(message):
     # checking if bots is set upped
-    if not os.path.exists("master_key.txt"):
-        with open("master_key.txt", "w+") as file:
-            file.write("created_by_raik199x")
+    if not os.path.exists(botDirectory):
+        CreateBotFiles()
+        SetUserStatus(message.chat.id, 0)
         bot.send_message(
             message.chat.id, "Seems bot runs for the first time\nCheck folder and enter *master key*")
-        os.mkdir("currentStatus")
-        os.mkdir("tickets")
-        SetUserStatus(message.chat.id, 0)
-        # creating txt file with chat id for mods
-        with open("mods.txt", "w"):
-            pass
-        # creating file for future reg keys
-        with open("registration_keys.txt", "w"):
-            pass
-        with open("bans.txt", "w"):
-            pass
-        with open("swap.txt", "w"):
-            pass
     elif CheckBanned(message) == 1:
         return
     # check if user already registered
-    elif os.path.exists("currentStatus/" + str(message.chat.id) + ".txt"):
+    elif os.path.exists(botDirectory + botStatusDirectory + str(message.chat.id) + ".txt"):
         bot.send_message(message.chat.id, "You have already run the bot")
         return
     # registering new user
@@ -297,6 +314,34 @@ def FirstEnter(message):
         bot.send_message(
             message.chat.id, "Please, enter your registration key")
         SetUserStatus(message.chat.id, "1")
+
+# Registration handlers (appears when user talk to bot for the first time)
+
+
+@bot.message_handler(func=lambda message: GetUserStatus(message.chat.id) == 0)
+def MasterKeyHandler(message):
+    with open(botDirectory + botMasterKeyFile) as file:
+        key = file.readline()
+    if key == message.text:
+        bot.send_message(
+            message.chat.id, "Success, admin rights are granted", reply_markup=main_keyboard)
+        with open(botDirectory + botModeratorsFile, "a+") as file:
+            file.write(str(message.chat.id) + "\n")
+        SetUserStatus(message.chat.id, "-1")
+    else:
+        bot.send_message(
+            message.chat.id, "Master key enter failed", reply_markup=None)
+        SetUserStatus(message.chat.id, "-1")
+
+
+@bot.message_handler(func=lambda message: GetUserStatus(message.chat.id) == 1)
+def RegistrationKeyHandler(message):
+    if CheckRegKey(message.text):
+        bot.send_message(
+            message.chat.id, "Access granted as user", reply_markup=main_keyboard)
+        SetUserStatus(message.chat.id, "-1")
+    else:
+        bot.send_message(message.chat.id, "Wrong reg key")
 
 # Exception handlers (handle some input that uses only in specific situations)
 
@@ -333,34 +378,6 @@ def BackToAdminMenuHandler(message):  # Always returns to admin menu
                      reply_markup=admin_keyboard)
     SetUserStatus(message.chat.id, "-1")
 
-# Registration handlers (appears when user talk to bot for the first time)
-
-
-@bot.message_handler(func=lambda message: GetUserStatus(message.chat.id) == 0)
-def MasterKeyHandler(message):
-    with open("master_key.txt") as file:
-        key = file.readline()
-    if key == message.text:
-        bot.send_message(
-            message.chat.id, "Success, admin rights are granted", reply_markup=main_keyboard)
-        with open("mods.txt", "a+") as file:
-            file.write(str(message.chat.id) + "\n")
-        SetUserStatus(message.chat.id, "-1")
-    else:
-        bot.send_message(
-            message.chat.id, "Master key enter failed", reply_markup=None)
-        SetUserStatus(message.chat.id, "-1")
-
-
-@bot.message_handler(func=lambda message: GetUserStatus(message.chat.id) == 1)
-def RegistrationKeyHandler(message):
-    if CheckRegKey(message.text):
-        bot.send_message(
-            message.chat.id, "Access granted as user", reply_markup=main_keyboard)
-        SetUserStatus(message.chat.id, "-1")
-    else:
-        bot.send_message(message.chat.id, "Wrong reg key")
-
 # Main menu handlers
 
 
@@ -368,6 +385,12 @@ def RegistrationKeyHandler(message):
 def TicketsMenuHandler(message):
     bot.send_message(message.chat.id, "Showing tickets menu",
                      reply_markup=ticketMenu_keyboard)
+
+
+@bot.message_handler(func=lambda message: message.text == "Contacts" and GetUserStatus(message.chat.id) == -1)
+def ContactsMenuHandler(message):
+    with open(botDirectory + botContactsFile, "r") as file:
+        bot.send_message(message.chat.id, file.read())
 
 
 @bot.message_handler(func=lambda message: message.text == "Admin Panel" and GetUserStatus(message.chat.id) == -1 and Parsers.IsUserAdmin(message.chat.id))
@@ -382,7 +405,7 @@ def ShowTicketsHandler(message):
         bot.send_message(
             message.chat.id, "There is no tickets", reply_markup=ticketMenu_keyboard)
         return
-    for i in os.listdir('tickets'):
+    for i in os.listdir(botDirectory + botTicketsDirectory):
         bot.send_message(message.chat.id, ShowUserTicketFile(
             str(i), message), reply_markup=ticketMenu_keyboard)
 
@@ -430,17 +453,17 @@ def SwapHandler(message):
             bot.send_message(message.chat.id, "There is no tickets\nIf you see this, it's probably a bug, contact "
                                               "with admins", reply_markup=ticketMenu_keyboard)
             return
-        for i in os.listdir('tickets'):
+        for i in os.listdir(botDirectory + botTicketsDirectory):
             bot.send_message(message.chat.id, ShowUserTicketFile(
                 str(i), message), reply_markup=requestingSwap)
         return
     elif message.text.find(":") == -1:
         bot.send_message(message.chat.id, "Invalid format")
         return
-    elif not os.path.exists("tickets/" + Parsers.ParseUsername(message.text, 1)):
+    elif not os.path.exists(botDirectory + botTicketsDirectory + Parsers.ParseUsername(message.text, 1)):
         bot.send_message(message.chat.id, "Ticket does not exist")
         return
-    with open("tickets/" + Parsers.ParseUsername(message.text, 1)) as check:
+    with open(botDirectory + botTicketsDirectory + Parsers.ParseUsername(message.text, 1)) as check:
         if check.readline() != "Randomized\n":
             bot.send_message(
                 message.chat.id, "This ticket was not randomized")
@@ -460,7 +483,7 @@ def SwapHandler(message):
     # getting info about user with whom we want to swap
     swUsername = str()
     swChatid = str()
-    with open("tickets/" + tempMes.text, "r") as tempFile:
+    with open(botDirectory + botTicketsDirectory + tempMes.text, "r") as tempFile:
         for num, i in enumerate(tempFile.readlines()):
             if num == int(place):
                 swUsername = Parsers.ParseUsername(i, 1)
@@ -468,7 +491,7 @@ def SwapHandler(message):
                 break
     # writing info to a swap file
     # tempMes.text = tempMes.text.replace("\n", "\\n") currently have bug with \n
-    with open("swap.txt", "a+") as swap:
+    with open(botDirectory + botSwapFile, "a+") as swap:
         swap.write(tempMes.text + "~" + message.from_user.username + ":" +
                    str(message.chat.id) + "~" + swUsername + ":" + swChatid + "\n")
     bot.send_message(message.chat.id, "Swapped request added",
@@ -487,7 +510,7 @@ def SwapAcceptHandler(message):
             bot.send_message(message.chat.id, "There is no tickets\nIf you see this, it's probably a bug, contact "
                                               "with admins", reply_markup=ticketMenu_keyboard)
             return
-        for i in os.listdir('tickets'):
+        for i in os.listdir(botDirectory + botTicketsDirectory):
             bot.send_message(message.chat.id, ShowUserTicketFile(
                 str(i), message), reply_markup=answerUserSwapRequest)
     elif message.text == "Cancel request":
@@ -508,7 +531,7 @@ def SwapDeclineHandler(message):
             bot.send_message(message.chat.id, "There is no tickets\nIf you see this, it's probably a bug, contact "
                                               "with admins", reply_markup=ticketMenu_keyboard)
             return
-        for i in os.listdir('tickets'):
+        for i in os.listdir(botDirectory + botTicketsDirectory):
             bot.send_message(message.chat.id, ShowUserTicketFile(
                 str(i), message), reply_markup=answerIncomingSwap)
     elif message.text == "Deny swap":
@@ -556,7 +579,7 @@ def CreateRegistrationKeyHandler(message):
 
 @bot.message_handler(func=lambda message: message.text == "Delete registration key" and GetUserStatus(message.chat.id) == -1 and Parsers.IsUserAdmin(message.chat.id))
 def DeleteRegistrationKeyHandler(message):
-    with open("registration_keys.txt", "r") as files:
+    with open(botDirectory + botRegKeyFile, "r") as files:
         existingKeys = files.read().split("\n")
         existingKeys.pop()
         bot.send_message(
@@ -601,23 +624,27 @@ def BanUserHandler(message):
         message.chat.id, "Enter user chat id", reply_markup=waitingInput)
 
 
-@bot.message_handler(func=lambda message: message.text == "Send logs" and GetUserStatus(message.chat.id) == -1 and Parsers.IsUserAdmin(message.chat.id))
-def SendLogsHandler(message):
-    bot.send_document(message.chat.id, open("logs.txt", "rb"))
+@bot.message_handler(func=lambda message: message.text == "Modify contacts info" and GetUserStatus(message.chat.id) == -1 and Parsers.IsUserAdmin(message.chat.id))
+def ModifyContactsHandler(message):
+    with open(botDirectory + botContactsFile, "r") as file:
+        contacts = file.read()
+        bot.send_message(message.chat.id, "Current contacts:\n\n" +
+                         contacts + "\n\nEnter new message", reply_markup=waitingInput),
+    SetUserStatus(message.chat.id, "13")
 
 
 @bot.message_handler(func=lambda message: GetUserStatus(message.chat.id) == 10)
 def ChangeMasterKeyHandler(message):
     bot.send_message(message.chat.id, "Successfully changed!",
                      reply_markup=main_keyboard)
-    with open("master_key.txt", "w") as file:
+    with open(botDirectory + botMasterKeyFile, "w") as file:
         file.write(message.text)
     SetUserStatus(message.chat.id, "-1")
 
 
 @bot.message_handler(func=lambda message: GetUserStatus(message.chat.id) == 11)
 def DeleteRegistrationKeyHandler(message):
-    with open("registration_keys.txt", "r") as file:
+    with open(botDirectory + botRegKeyFile, "r") as file:
         existingKeys = file.read().split("\n")
     existingKeys.pop()
     try:
@@ -625,7 +652,7 @@ def DeleteRegistrationKeyHandler(message):
     except ValueError:
         bot.send_message(message.chat.id, "Key not found")
         return
-    with open("registration_keys.txt", "w") as file:
+    with open(botDirectory + botRegKeyFile, "w") as file:
         for i in existingKeys:
             file.write(i + "\n")
     bot.send_message(message.chat.id, "Successfully deleted",
@@ -635,7 +662,7 @@ def DeleteRegistrationKeyHandler(message):
 
 @bot.message_handler(func=lambda message: GetUserStatus(message.chat.id) == 12)
 def BanUserHandler(message):
-    with open("bans.txt", "a+") as banning:
+    with open(botDirectory + botBannedFile, "a+") as banning:
         banning.write(message.text + "\n")
     bot.send_message(message.chat.id, message.text +
                      " was added to a ban file", reply_markup=admin_keyboard)
@@ -646,11 +673,11 @@ def BanUserHandler(message):
 def CreateTicketHandler(message):
     if SecurityFileCheck(message) == 1:
         return
-    elif os.path.exists("tickets/" + str(message.text)):
+    elif os.path.exists(botDirectory + botTicketsDirectory + str(message.text)):
         bot.send_message(
             message.chat.id, "Sorry, such event is already exist")
         return
-    with open("tickets/" + message.text, "w") as ticketFile:
+    with open(botDirectory + botTicketsDirectory + message.text, "w") as ticketFile:
         ticketFile.write("Active\n")
     bot.send_message(message.chat.id, "Created!")
     SetUserStatus(message.chat.id, "-1")
@@ -660,8 +687,8 @@ def CreateTicketHandler(message):
 def DeleteTicketHandler(message):
     if SecurityFileCheck(message) == 1:
         return
-    if os.path.exists("tickets/" + str(message.text)):
-        os.remove("tickets/" + str(message.text))
+    if os.path.exists(botDirectory + botTicketsDirectory + str(message.text)):
+        os.remove(botDirectory + botTicketsDirectory + str(message.text))
         bot.send_message(message.chat.id, "Deleted!",
                          reply_markup=ticketMenu_keyboard)
         SetUserStatus(message.chat.id, "-1")
@@ -674,18 +701,18 @@ def DeleteTicketHandler(message):
 def ActivateTicketHandler(message):
     if SecurityFileCheck(message) == 1:
         return
-    if not os.path.exists("tickets/" + message.text):
+    if not os.path.exists(botDirectory + botTicketsDirectory + message.text):
         bot.send_message(message.chat.id, "No such ticket")
         return
     if IsUserInRandom(message) == 1:
         bot.send_message(message.chat.id, "You are already in this random")
         return
-    with open("tickets/" + message.text, "r") as file:
+    with open(botDirectory + botTicketsDirectory + message.text, "r") as file:
         if file.readline() == "Randomized\n":
             bot.send_message(
                 message.chat.id, "This random was already randomized")
             return
-    with open("tickets/" + message.text, "a+") as file:
+    with open(botDirectory + botTicketsDirectory + message.text, "a+") as file:
         file.write(message.from_user.username +
                    ":" + str(message.chat.id) + "\n")
     bot.send_message(message.chat.id, "You entered random",
@@ -697,11 +724,11 @@ def ActivateTicketHandler(message):
 def RandomTicketHandler(message):
     if SecurityFileCheck(message) == 1:
         return
-    elif not os.path.exists("tickets/" + message.text):
+    elif not os.path.exists(botDirectory + botTicketsDirectory + message.text):
         bot.send_message(message.chat.id, "Ticket does not exist")
         return
     # checking some conditions
-    with open("tickets/" + message.text, "r") as preRandom:
+    with open(botDirectory + botTicketsDirectory + message.text, "r") as preRandom:
         if not preRandom.readline() == "Active\n":
             bot.send_message(
                 message.chat.id, "This ticket is already randomized")
@@ -710,7 +737,7 @@ def RandomTicketHandler(message):
             bot.send_message(
                 message.chat.id, "there is no users for random")
             return
-    with open("tickets/" + message.text, "r") as gettingUsers:
+    with open(botDirectory + botTicketsDirectory + message.text, "r") as gettingUsers:
         usersInRandom = gettingUsers.readlines()
         usersInRandom.remove(usersInRandom[0])
     randomSection.PerformingRandom(message.text, usersInRandom)
@@ -719,6 +746,38 @@ def RandomTicketHandler(message):
     Notification(message.text)
     SetUserStatus(message.chat.id, "-1")
 
+
+@bot.message_handler(func=lambda message: GetUserStatus(message.chat.id) == 13)
+def ChangeContactsHandler(message):
+    with open(botDirectory + botContactsFile, "w") as file:
+        file.write(message.text)
+    bot.send_message(
+        message.chat.id, "Contacts successfully changed", reply_markup=admin_keyboard)
+    SetUserStatus(message.chat.id, "-1")
+
+@bot.message_handler(func=lambda message: message.text == "Unban user" and GetUserStatus(message.chat.id) == -1 and Parsers.IsUserAdmin(message.chat.id))
+def UnbanUserHandler(message):
+    bans = Parsers.GetBannedUsers()
+    if len(bans) == 1:
+        bot.send_message(message.chat.id, "No banned users")
+        return
+    # creating keyboard
+    bannedUsersKeyboard = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
+    for i in bans:
+        bannedUsersKeyboard.add(i)
+    bannedUsersKeyboard.add("Back to admin menu")
+    bot.send_message(message.chat.id, "Choose user to unban", reply_markup=bannedUsersKeyboard)
+    SetUserStatus(message.chat.id, 14)
+
+@bot.message_handler(func=lambda message: GetUserStatus(message.chat.id) == 14)
+def UnbanConfirmationHandler(message):
+    with open(botDirectory + botBannedFile, "r") as file:
+        bannedUsers = file.readlines()
+    bannedUsers.remove(message.text + "\n")
+    with open(botDirectory + botBannedFile, "w") as file:
+        file.writelines(bannedUsers)
+    bot.send_message(message.chat.id, "User successfully unbanned", reply_markup=admin_keyboard)
+    SetUserStatus(message.chat.id, -1)
 
 @bot.message_handler(content_types=['text'])
 def Answering(message):

@@ -1,6 +1,6 @@
 import os
 import Parsers
-
+from sharedVariables import *
 
 def CheckPosition(fileName, chatid, place):
     """
@@ -16,7 +16,7 @@ def CheckPosition(fileName, chatid, place):
         return -1
     if place < 1:
         return -1
-    with open("tickets/" + fileName, "r") as file:
+    with open(botDirectory + botTicketsDirectory + fileName, "r") as file:
         lines = file.readlines()
     for num, i in enumerate(lines):
         if num == 0:
@@ -27,12 +27,12 @@ def CheckPosition(fileName, chatid, place):
 
 
 def SwapUsers(ticketName, asker, acceptor, acceptorId):
-    if not os.path.exists("tickets/" + ticketName):
+    if not os.path.exists(botDirectory + botTicketsDirectory + ticketName):
         return -1
-    with open("tickets/" + ticketName, "r") as file:
+    with open(botDirectory + botTicketsDirectory + ticketName, "r") as file:
         lines = file.readlines()
     accept = acceptor + ":" + acceptorId
-    with open("tickets/" + ticketName, "w") as file:
+    with open(botDirectory + botTicketsDirectory + ticketName, "w") as file:
         for i in lines:
             if i == "randomized\n":
                 file.write(i)
@@ -56,9 +56,9 @@ def DeleteRequest(mode, data):
     :param mode: int value
     :param data: string value, data in it is based on chosen mode
     """
-    with open("swap.txt", "r") as file:
+    with open(botDirectory + botSwapFile, "r") as file:
         lines = file.readlines()
-    with open("swap.txt", "w") as file:
+    with open(botDirectory + botSwapFile, "w") as file:
         for i in lines:
             ticketName = i[:i.find("~")]
             i = i[i.find("~") + 1:]
@@ -83,11 +83,11 @@ def ParsingSwapFile(message):
     2 - active request from another user
     then in case 1 and 2 also sends data about swap
     """
-    with open("swap.txt", "r") as file:
+    with open(botDirectory + botSwapFile, "r") as file:
         for i in file.readlines():
             ticketName = i[:i.find("~")]
             # checking if ticket exist
-            if not os.path.exists("tickets/" + ticketName):
+            if not os.path.exists(botDirectory + botTicketsDirectory + ticketName):
                 DeleteRequest(1, ticketName)
                 return ParsingSwapFile(message)
             i = i[i.find("~") + 1:]

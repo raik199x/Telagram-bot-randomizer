@@ -1,5 +1,3 @@
-tickets/
-currentStatus/
 __pycache__/
-*.txt
 .vscode/
+BotFiles/

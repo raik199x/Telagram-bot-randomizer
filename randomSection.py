@@ -1,12 +1,13 @@
 import random
 import string
+from sharedVariables import *
 
 
 def GenerateRegKey():
     newKey = str()
     for i in range(0, 101):
         newKey += random.choice(string.ascii_letters)
-    with open("registration_keys.txt", "a+") as file:
+    with open(botDirectory + botRegKeyFile, "a+") as file:
         file.write(newKey + "\n")
     return newKey
 
@@ -18,7 +19,7 @@ def PerformingRandom(fileName, users):
     :param fileName: file which will be replaced with randomized version
     :param users: list of users
     """
-    with open("tickets/" + fileName, "w") as file:
+    with open(botDirectory + botTicketsDirectory + fileName, "w") as file:
         file.write("Randomized\n")
         temp = len(users)
         for i in range(temp):

@@ -1,4 +1,5 @@
 import os
+from sharedVariables import *
 
 def ParseUsername(line, mode):
     """
@@ -17,7 +18,7 @@ def ParseUsername(line, mode):
 
 
 def IsUserAdmin(chatId):
-    with open("mods.txt", "r") as file:
+    with open(botDirectory + botModeratorsFile, "r") as file:
         mods = file.read()
         mods = mods.split("\n")
         admin_access = False
@@ -31,6 +32,15 @@ def IsThereTickets():
     """
     :return: int value, 0 if no ticket, 1 if opposite
     """
-    for _ in os.listdir('tickets'):
+    for _ in os.listdir(botDirectory + botTicketsDirectory):
         return 1
     return 0
+
+def GetBannedUsers():
+    """
+    :return: list of banned users
+    """
+    with open(botDirectory + botBannedFile, "r") as file:
+        bannedUsers = file.read()
+        bannedUsers = bannedUsers.split("\n")
+    return bannedUsers
