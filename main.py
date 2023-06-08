@@ -10,10 +10,9 @@ from sharedVariables import *
 # > All keyboard: Create function for creating keyboards that will check if user admin and add admin buttons
 # > Swap: add more user-friendly interface
 # > add Unban user function
-# > CoinFlip
-# > roll
 # > custom list random
 # > random number generator
+# > make more files for the project
 
 """
 0 - entering master key
@@ -36,6 +35,9 @@ SWAPPING
 31 - writing swap rule
 33 - you requested swap
 34 - someone requested swap with you
+----------------------------
+BASIC RANDOMS
+41 - dice roll
 ----------------------------
 -1 - nothing (AKA idle)
 """
@@ -103,7 +105,7 @@ def CheckBanned(message):
 
 
 main_keyboard = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
-main_keyboard.add("Tickets")
+main_keyboard.add("Tickets", "Basic randoms")
 main_keyboard.add("Contacts")
 main_keyboard.add("Admin Panel")
 
@@ -134,6 +136,11 @@ requestingSwap = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
 requestingSwap.add("Waiting Input")
 requestingSwap.add("Show tickets")
 requestingSwap.add("Back to ticket menu")
+
+basicRandomsMenu = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
+basicRandomsMenu.add("Coin flip", "Dice roll")
+basicRandomsMenu.add("Random number", "Custom list random")
+basicRandomsMenu.add("Back")
 
 waitingInput = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
 waitingInput.add("Waiting Input")
@@ -387,6 +394,12 @@ def TicketsMenuHandler(message):
                      reply_markup=ticketMenu_keyboard)
 
 
+@bot.message_handler(func=lambda message: message.text == "Basic randoms" and GetUserStatus(message.chat.id) == -1)
+def BasicRandomsHandler(message):
+    bot.send_message(message.chat.id, "Showing basic randoms",
+                     reply_markup=basicRandomsMenu)
+
+
 @bot.message_handler(func=lambda message: message.text == "Contacts" and GetUserStatus(message.chat.id) == -1)
 def ContactsMenuHandler(message):
     with open(botDirectory + botContactsFile, "r") as file:
@@ -398,6 +411,47 @@ def AdminPanelHandler(message):
     bot.send_message(message.chat.id, "Showing admin panel",
                      reply_markup=admin_keyboard)
 
+# Basic randoms menu handlers
+
+
+@bot.message_handler(func=lambda message: message.text == "Coin flip" and GetUserStatus(message.chat.id) == -1)
+def CoinFlipHandler(message):
+    bot.send_photo(message.chat.id, open(
+        filesDirectory + randomSection.CoinFlip(), "rb"))
+
+
+@bot.message_handler(func=lambda message: message.text == "Dice roll" and GetUserStatus(message.chat.id) == -1)
+def DiceRollHandler(message):
+    SetUserStatus(message.chat.id, "41")
+    diceKeyboard = telebot.types.ReplyKeyboardMarkup()
+    for i in range(1, 10, 3):
+        diceKeyboard.add(str(i), str(i+1), str(i+2))
+    diceKeyboard.add("Back")
+    bot.send_message(
+        message.chat.id, "Enter number of dices to roll", reply_markup=diceKeyboard)
+
+
+@bot.message_handler(func=lambda message: GetUserStatus(message.chat.id) == 41 and message.text.isdigit())
+def DiceRollResultHandler(message):
+    if int(message.text) < 0:
+        bot.send_message(message.chat.id, "Number of dices cannot be negative")
+    elif int(message.text) > 10:
+        bot.send_message(
+            message.chat.id, "Number of dices cannot be more than 10")
+
+    dices = randomSection.DiceRoll(int(message.text))
+    media = []
+
+    for photoPath in dices:
+        with open(filesDirectory + photoPath, 'rb') as photo:
+            file_data = photo.read()
+            media.append(telebot.types.InputMediaPhoto(file_data))
+
+    bot.send_media_group(message.chat.id, media)
+
+
+# Ticket menu handlers
+
 
 @bot.message_handler(func=lambda message: message.text == "Show tickets" and GetUserStatus(message.chat.id) == -1)
 def ShowTicketsHandler(message):
@@ -408,6 +462,17 @@ def ShowTicketsHandler(message):
     for i in os.listdir(botDirectory + botTicketsDirectory):
         bot.send_message(message.chat.id, ShowUserTicketFile(
             str(i), message), reply_markup=ticketMenu_keyboard)
+
+
+@bot.message_handler(func=lambda message: message.text == "Join random" and GetUserStatus(message.chat.id) == -1)
+def JoinRandomHandler(message):
+    if Parsers.IsThereTickets() == 0:
+        bot.send_message(
+            message.chat.id, "There is no tickets", reply_markup=ticketMenu_keyboard)
+        return
+    bot.send_message(message.chat.id, "Choose ticket (keyboard)",
+                     reply_markup=GetTicketsKeyboard(message, 2))
+    SetUserStatus(message.chat.id, "23")
 
 # Ticket menu: Swap handlers
 
@@ -550,17 +615,6 @@ def SwapDeclineHandler(message):
         swapFunctions.DeleteRequest(
             2, Parsers.ParseUsername(str(message.chat.id), 2))
         SetUserStatus(message.chat.id, "-1")
-
-
-@bot.message_handler(func=lambda message: message.text == "Join random" and GetUserStatus(message.chat.id) == -1)
-def JoinRandomHandler(message):
-    if Parsers.IsThereTickets() == 0:
-        bot.send_message(
-            message.chat.id, "There is no tickets", reply_markup=ticketMenu_keyboard)
-        return
-    bot.send_message(message.chat.id, "Choose ticket (keyboard)",
-                     reply_markup=GetTicketsKeyboard(message, 2))
-    SetUserStatus(message.chat.id, "23")
 
 
 @bot.message_handler(func=lambda message: message.text == "Change master key" and GetUserStatus(message.chat.id) == -1 and Parsers.IsUserAdmin(message.chat.id))
@@ -755,6 +809,7 @@ def ChangeContactsHandler(message):
         message.chat.id, "Contacts successfully changed", reply_markup=admin_keyboard)
     SetUserStatus(message.chat.id, "-1")
 
+
 @bot.message_handler(func=lambda message: message.text == "Unban user" and GetUserStatus(message.chat.id) == -1 and Parsers.IsUserAdmin(message.chat.id))
 def UnbanUserHandler(message):
     bans = Parsers.GetBannedUsers()
@@ -762,12 +817,15 @@ def UnbanUserHandler(message):
         bot.send_message(message.chat.id, "No banned users")
         return
     # creating keyboard
-    bannedUsersKeyboard = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
+    bannedUsersKeyboard = telebot.types.ReplyKeyboardMarkup(
+        resize_keyboard=True)
     for i in bans:
         bannedUsersKeyboard.add(i)
     bannedUsersKeyboard.add("Back to admin menu")
-    bot.send_message(message.chat.id, "Choose user to unban", reply_markup=bannedUsersKeyboard)
+    bot.send_message(message.chat.id, "Choose user to unban",
+                     reply_markup=bannedUsersKeyboard)
     SetUserStatus(message.chat.id, 14)
+
 
 @bot.message_handler(func=lambda message: GetUserStatus(message.chat.id) == 14)
 def UnbanConfirmationHandler(message):
@@ -776,13 +834,16 @@ def UnbanConfirmationHandler(message):
     bannedUsers.remove(message.text + "\n")
     with open(botDirectory + botBannedFile, "w") as file:
         file.writelines(bannedUsers)
-    bot.send_message(message.chat.id, "User successfully unbanned", reply_markup=admin_keyboard)
+    bot.send_message(message.chat.id, "User successfully unbanned",
+                     reply_markup=admin_keyboard)
     SetUserStatus(message.chat.id, -1)
+
 
 @bot.message_handler(content_types=['text'])
 def Answering(message):
     bot.send_message(message.chat.id, "Unknown command",
                      reply_markup=main_keyboard)
+    SetUserStatus(message.chat.id, -1)
 
 
 bot.polling(none_stop=True)
