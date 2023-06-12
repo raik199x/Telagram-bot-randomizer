@@ -1,9 +1,7 @@
 import random
 import string
-from sharedVariables import *
+from Bot.shared.constants import *
 
-coins = ["CoinHead.png", "CoinTail.png"]
-dices = ["d1.png", "d2.png", "d3.png", "d4.png", "d5.png", "d6.png"]
 
 def GenerateRegKey():
     """
@@ -36,6 +34,7 @@ def PerformingRandom(fileName, users):
 
 
 def CoinFlip():
+    coins = ["CoinHead.png", "CoinTail.png"]
     return coins[0] if random.randint(0, 1) == 0 else coins[1]
 
 
@@ -46,7 +45,19 @@ def DiceRoll(amount):
     @param amount amount of dices to throw
     @return: string with dices
     """
+    dices = ["d1.png", "d2.png", "d3.png", "d4.png", "d5.png", "d6.png"]
     result = []
     for i in range(amount):
         result.append(dices[random.randint(0, 5)])
     return result
+
+
+def RandomNumber(numberFrom, numberTo):
+    """
+    Randomly generates a number
+
+    @param numberFrom: number from
+    @param numberTo: number to
+    @return: string with number
+    """
+    return str(random.randint(int(numberFrom), int(numberTo)))

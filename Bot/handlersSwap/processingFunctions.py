@@ -1,8 +1,8 @@
-import os
-import Parsers
-from sharedVariables import *
+from Bot.shared.constants import *
+from Bot.Parsers.lineParsers import ParseUsername
 
-def CheckPosition(fileName, chatid, place):
+
+def CheckPosition(fileName, chatId, place):
     """
     Checks is position valid
 
@@ -21,7 +21,7 @@ def CheckPosition(fileName, chatid, place):
     for num, i in enumerate(lines):
         if num == 0:
             continue
-        if num == int(place) and str(chatid) != Parsers.ParseUsername(i, 2):
+        if num == int(place) and str(chatId) != ParseUsername(i, 2):
             return 0
     return 1
 
@@ -67,7 +67,7 @@ def DeleteRequest(mode, data):
             userTwo = i[:i.find("\n")]
             if mode == 1 and data == ticketName:
                 continue
-            elif mode == 2 and (Parsers.ParseUsername(userOne, 2) == data or Parsers.ParseUsername(userTwo, 2)):
+            elif mode == 2 and (ParseUsername(userOne, 2) == data or ParseUsername(userTwo, 2)):
                 continue
             file.write(ticketName + "~" + userOne + "~" + userTwo + "\n")
 
@@ -94,8 +94,8 @@ def ParsingSwapFile(message):
             userOne = i[:i.find("~") + 1]
             i = i[i.find("~") + 1:]
             userTwo = i[:i.find("\n") + 1]
-            if str(message.chat.id) == Parsers.ParseUsername(userOne, 2):
+            if str(message.chat.id) == ParseUsername(userOne, 2):
                 return [1, ticketName, userTwo[:-1]]
-            elif str(message.chat.id) == Parsers.ParseUsername(userTwo, 2):
+            elif str(message.chat.id) == ParseUsername(userTwo, 2):
                 return [2, ticketName, userOne[:-1]]
     return [0]
