@@ -51,3 +51,22 @@ def GetTicketsKeyboard(message, mode):
                     existingTickets.add(types.KeyboardButton(i))
     existingTickets.add("Back to ticket menu")
     return existingTickets
+
+
+def GetWaitingInputKeyboard(chatId):
+    waitingInput = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    waitingInput.add("Waiting Input")
+    if IsUserAdmin(chatId):
+        waitingInput.add("Back to ticket menu", "Back to admin menu", "Back to basic randoms")
+    else:
+        waitingInput.add("Back to ticket menu", "Back to basic randoms")
+    return waitingInput
+
+
+def GetMainKeyboard(chatId):
+    main_keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    main_keyboard.add("Tickets", "Basic randoms")
+    main_keyboard.add("Contacts")
+    if IsUserAdmin(chatId):
+        main_keyboard.add("Admin Panel")
+    return main_keyboard

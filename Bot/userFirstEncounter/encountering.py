@@ -2,7 +2,7 @@ from Bot.shared.constants import *
 from Bot.shared.functions import *
 from Bot.DirectoryManip.fileCheckers import CheckWorkingDirectory
 from Bot.Parsers.keyVerification import CheckRegKey, CheckMasterKey
-from Bot.Keyboards.static import main_keyboard
+from Bot.Keyboards.dynamic import GetMainKeyboard
 from Bot.DirectoryManip.fileOperations import AddAdmin
 
 
@@ -23,7 +23,7 @@ def start(message):
 def MasterKeyHandler(message):
     if CheckMasterKey(message.text):
         bot.send_message(
-            message.chat.id, "Access granted as admin", reply_markup=main_keyboard)
+            message.chat.id, "Access granted as admin", reply_markup=GetMainKeyboard(message.chat.id))
         SetUserStatus(message.chat.id, user_idle)
         AddAdmin(message.chat.id)
     else:
@@ -35,7 +35,7 @@ def MasterKeyHandler(message):
 def RegistrationKeyHandler(message):
     if CheckRegKey(message.text):
         bot.send_message(
-            message.chat.id, "Access granted as user", reply_markup=main_keyboard)
+            message.chat.id, "Access granted as user", reply_markup=GetMainKeyboard(message.chat.id))
         SetUserStatus(message.chat.id, user_idle)
     else:
         bot.send_message(message.chat.id, "Wrong reg key")

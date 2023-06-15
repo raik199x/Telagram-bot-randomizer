@@ -1,12 +1,12 @@
 from Bot.shared.functions import *
-from Bot.Keyboards.static import admin_keyboard, main_keyboard, basicRandomsMenu
-from Bot.Keyboards.dynamic import GetTicketsMenuKeyboard
+from Bot.Keyboards.static import admin_keyboard, basicRandomsMenu
+from Bot.Keyboards.dynamic import GetTicketsMenuKeyboard, GetMainKeyboard
 from Bot.Parsers.userProperties import IsUserAdmin
 
 
 @bot.message_handler(func=lambda message: message.text == "Back")
 def BackHandler(message):  # Always returns to main menu
-    bot.send_message(message.chat.id, "Back", reply_markup=main_keyboard)
+    bot.send_message(message.chat.id, "Back", reply_markup=GetMainKeyboard(message.chat.id))
     SetUserStatus(message.chat.id, user_idle)
 
 

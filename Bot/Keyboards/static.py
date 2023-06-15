@@ -1,14 +1,10 @@
 from telebot import types
 
-main_keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-main_keyboard.add("Tickets", "Basic randoms")
-main_keyboard.add("Contacts")
-main_keyboard.add("Admin Panel")
-
 
 admin_keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
 admin_keyboard.add("Change master key")
-admin_keyboard.add("Create registration key", "Delete registration key")
+admin_keyboard.add("Create registration key",
+                   "Show registration keys", "Delete registration key")
 admin_keyboard.add("Ban user", "Unban user")
 admin_keyboard.add("Modify contacts info")
 admin_keyboard.add("Back")
@@ -35,8 +31,3 @@ basicRandomsMenu = types.ReplyKeyboardMarkup(resize_keyboard=True)
 basicRandomsMenu.add("Coin flip", "Dice roll")
 basicRandomsMenu.add("Random number")
 basicRandomsMenu.add("Back")
-
-
-waitingInput = types.ReplyKeyboardMarkup(resize_keyboard=True)
-waitingInput.add("Waiting Input")
-waitingInput.add("Back to ticket menu", "Back to admin menu", "Back to basic randoms")

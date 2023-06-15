@@ -3,8 +3,7 @@ from Bot.shared.functions import *
 from Bot.Parsers.statements import IsThereTickets
 from Bot.Parsers.userProperties import IsUserInRandom, IsUserAdmin
 from Bot.Parsers.lineParsers import ParseUsername
-from Bot.Keyboards.dynamic import GetTicketsMenuKeyboard, GetTicketsKeyboard
-from Bot.Keyboards.static import waitingInput
+from Bot.Keyboards.dynamic import GetTicketsMenuKeyboard, GetTicketsKeyboard, GetWaitingInputKeyboard
 from Bot.handlersTicket.processingFunctions import ShowUserTicketFile
 from Bot.randomFunctions.randoms import PerformingRandom
 
@@ -57,7 +56,7 @@ def ActivateTicketHandler(message):
 @bot.message_handler(func=lambda message: message.text == "Create ticket (adm)" and GetUserStatus(message.chat.id) == user_idle and IsUserAdmin(message.chat.id))
 def CreateTicketHandler(message):
     bot.send_message(
-        message.chat.id, "Enter name of the event or use keyboard", reply_markup=waitingInput)
+        message.chat.id, "Enter name of the event or use keyboard", reply_markup=GetWaitingInputKeyboard(message.chat.id))
     SetUserStatus(message.chat.id, admin_creating_ticket)
 
 

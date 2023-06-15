@@ -1,7 +1,7 @@
 from Bot.shared.constants import *
 from Bot.shared.functions import GetUserStatus, SetUserStatus
 from Bot.randomFunctions.randoms import CoinFlip, DiceRoll, RandomNumber
-from Bot.Keyboards.static import waitingInput
+from Bot.Keyboards.dynamic import GetWaitingInputKeyboard
 
 
 @bot.message_handler(func=lambda message: message.text == "Coin flip" and GetUserStatus(message.chat.id) == user_idle)
@@ -44,7 +44,7 @@ def DiceRollResultHandler(message):
 def RandomNumberHandler(message):
     SetUserStatus(message.chat.id, user_random_number)
     bot.send_message(
-        message.chat.id, "Enter range (from:to)", reply_markup=waitingInput)
+        message.chat.id, "Enter range (from:to)", reply_markup=GetWaitingInputKeyboard(message.chat.id))
 
 
 @bot.message_handler(func=lambda message: GetUserStatus(message.chat.id) == user_random_number)
@@ -70,4 +70,4 @@ def RandomNumberResultHandler(message):
         return
     result = RandomNumber(message.text.split(
         ":")[0], message.text.split(":")[1])
-    bot.send_message(message.chat.id, result, reply_markup=waitingInput)
+    bot.send_message(message.chat.id, result, reply_markup=GetWaitingInputKeyboard(message.chat.id))
