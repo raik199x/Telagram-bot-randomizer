@@ -33,9 +33,9 @@ First of all, you need to create your bot in chat with [bot father](https://tele
 
 Then you need to create environment variable named *TOKEN* that will be equal to your token (ex. ```export TOKEN=your_token_value```) or modify *main.py* and insert your token.
 
-To run this bot you need to install pyTelegramBotApi
+To run this bot you need to install requirements:
 
- pip3 install pyTelegramBotApi
+ pip3 install -r requirements.txt
   
 then clone this repository and simply run bot
 

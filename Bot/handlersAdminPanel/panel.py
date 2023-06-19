@@ -5,10 +5,13 @@ from Bot.Keyboards.dynamic import GetWaitingInputKeyboard, GetMainKeyboard
 from Bot.randomFunctions.randoms import GenerateRegKey
 from Bot.Parsers.userProperties import IsUserAdmin
 from os.path import getsize
+from Bot.logger.setup import logger, BasicUserInfo
 
 
 @bot.message_handler(func=lambda message: message.text == "Change master key" and GetUserStatus(message.chat.id) == user_idle)
 def ChangeMasterKey(message):
+    logger.warning(BasicUserInfo(message) + " is changing master key")
+
     SetUserStatus(message.chat.id, admin_changing_master_key)
     bot.send_message(
         message.chat.id, "Enter new master key", reply_markup=GetWaitingInputKeyboard(message.chat.id))
@@ -16,6 +19,8 @@ def ChangeMasterKey(message):
 
 @bot.message_handler(func=lambda message: GetUserStatus(message.chat.id) == admin_changing_master_key)
 def ChangeMasterKeyHandler(message):
+    logger.warning(BasicUserInfo(message) + " changed master key")
+
     bot.send_message(message.chat.id, "Successfully changed!",
                      reply_markup=GetMainKeyboard(message.chat.id))
     with open(botDirectory + botMasterKeyFile, "w") as file:
@@ -25,6 +30,8 @@ def ChangeMasterKeyHandler(message):
 
 @bot.message_handler(func=lambda message: message.text == "Create registration key" and GetUserStatus(message.chat.id) == user_idle and IsUserAdmin(message.chat.id))
 def CreateRegistrationKeyHandler(message):
+    logger.warning(BasicUserInfo(message) + " is creating registration key")
+
     newKey = GenerateRegKey()
     bot.send_message(
         message.chat.id, "Successfully generated key:\n" + newKey, reply_markup=admin_keyboard)
@@ -32,6 +39,8 @@ def CreateRegistrationKeyHandler(message):
 
 @bot.message_handler(func=lambda message: message.text == "Show registration keys" and GetUserStatus(message.chat.id) == user_idle and IsUserAdmin(message.chat.id))
 def ShowingRegistrationKeysHandler(message):
+    logger.info(BasicUserInfo(message) + " is watching registration keys")
+
     if getsize(botDirectory + botRegKeyFile) == 0:
         bot.send_message(message.chat.id, "There are no registration keys")
     with open(botDirectory + botRegKeyFile, "r") as file:
@@ -43,6 +52,8 @@ def ShowingRegistrationKeysHandler(message):
 
 @bot.message_handler(func=lambda message: message.text == "Delete registration key" and GetUserStatus(message.chat.id) == user_idle and IsUserAdmin(message.chat.id))
 def AskDeletingRegistrationKeyHandler(message):
+    logger.warning(BasicUserInfo(message) + " is deleting registration key")
+
     # First, check if any key exist
     if getsize(botDirectory + botRegKeyFile) == 0:
         bot.send_message(message.chat.id, "There are no registration keys")
@@ -57,6 +68,8 @@ def AskDeletingRegistrationKeyHandler(message):
 def DeletingRegistrationKeyHandler(message):
     # First, check if any key exist
     if getsize(botDirectory + botRegKeyFile) == 0:
+        logger.info(BasicUserInfo(message) + " tried to delete registration key, but there is no keys")
+
         bot.send_message(
             message.chat.id, "At the moment, there is no registration keys")
         SetUserStatus(message.chat.id, user_idle)
@@ -64,6 +77,8 @@ def DeletingRegistrationKeyHandler(message):
     # Now we check if such key in file
     with open(botDirectory + botRegKeyFile, "r") as file:
         if message.text not in file.read():
+            logger.info(BasicUserInfo(message) + " tried to delete registration key, but there is no such key")
+
             bot.send_message(message.chat.id, "There is no such key")
             SetUserStatus(message.chat.id, user_idle)
             return
@@ -77,10 +92,13 @@ def DeletingRegistrationKeyHandler(message):
     bot.send_message(message.chat.id, "Successfully deleted key",
                      reply_markup=admin_keyboard)
     SetUserStatus(message.chat.id, user_idle)
+    logger.warning(BasicUserInfo(message) + " deleted registration key")
 
 
 @bot.message_handler(func=lambda message: message.text == "Ban user" and GetUserStatus(message.chat.id) == user_idle and IsUserAdmin(message.chat.id))
-def BanUserHandler(message):
+def AskBanUserHandler(message):
+    logger.info(BasicUserInfo(message) + " is banning user")
+
     SetUserStatus(message.chat.id, admin_banning_user)
     bot.send_message(
         message.chat.id, "Enter user chat id", reply_markup=GetWaitingInputKeyboard(message.chat.id))
@@ -88,6 +106,8 @@ def BanUserHandler(message):
 
 @bot.message_handler(func=lambda message: GetUserStatus(message.chat.id) == admin_banning_user)
 def BanUserHandler(message):
+    logger.info(BasicUserInfo(message) + " banned user")
+
     with open(botDirectory + botBannedFile, "a+") as banning:
         banning.write(message.text + "\n")
     bot.send_message(message.chat.id, message.text +
@@ -97,9 +117,12 @@ def BanUserHandler(message):
 
 @bot.message_handler(func=lambda message: message.text == "Unban user" and GetUserStatus(message.chat.id) == user_idle and IsUserAdmin(message.chat.id))
 def AskUnbanUserHandler(message):
+    logger.info(BasicUserInfo(message) + " is unbanning user")
+
     # First check if there banned users
     if getsize(botDirectory + botBannedFile) == 0:
         bot.send_message(message.chat.id, "There are no banned users")
+        logger.info(BasicUserInfo(message) + " tried to unban user, but there is no banned users")
         return
     # Now we send all banned users
     with open(botDirectory + botBannedFile, "r") as file:
@@ -117,12 +140,16 @@ def AskUnbanUserHandler(message):
 def UnbanUserHandler(message):
     # First check if there banned users
     if getsize(botDirectory + botBannedFile) == 0:
+        logger.info(BasicUserInfo(message) + " tried to unban user, but there is no banned users")
+
         bot.send_message(message.chat.id, "Now there are no banned users")
         SetUserStatus(message.chat.id, user_idle)
         return
     # Now we check if such user in file
     with open(botDirectory + botBannedFile, "r") as file:
         if message.text not in file.read():
+            logger.info(BasicUserInfo(message) + " tried to unban user, but there is no such user")
+
             bot.send_message(message.chat.id, "There is no such user")
             SetUserStatus(message.chat.id, user_idle)
             return
@@ -136,10 +163,13 @@ def UnbanUserHandler(message):
     bot.send_message(message.chat.id, "Successfully unbanned user",
                      reply_markup=admin_keyboard)
     SetUserStatus(message.chat.id, user_idle)
+    logger.warning(BasicUserInfo(message) + " unbanned user")
 
 
 @bot.message_handler(func=lambda message: message.text == "Modify contacts info" and GetUserStatus(message.chat.id) == user_idle and IsUserAdmin(message.chat.id))
 def ModifyContactsHandler(message):
+    logger.info(BasicUserInfo(message) + " is modifying contacts")
+
     with open(botDirectory + botContactsFile, "r") as file:
         contacts = file.read()
         bot.send_message(message.chat.id, "Current contacts:\n\n" +
@@ -149,6 +179,8 @@ def ModifyContactsHandler(message):
 
 @bot.message_handler(func=lambda message: GetUserStatus(message.chat.id) == admin_modifying_contacts)
 def ChangeContactsHandler(message):
+    logger.info(BasicUserInfo(message) + " changed contacts")
+
     with open(botDirectory + botContactsFile, "w") as file:
         file.write(message.text)
     bot.send_message(

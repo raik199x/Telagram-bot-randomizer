@@ -6,6 +6,7 @@ from Bot.Parsers.lineParsers import ParseUsername
 from Bot.Keyboards.dynamic import GetTicketsMenuKeyboard, GetTicketsKeyboard, GetWaitingInputKeyboard
 from Bot.handlersTicket.processingFunctions import ShowUserTicketFile
 from Bot.randomFunctions.randoms import PerformingRandom
+from Bot.logger.setup import logger, BasicUserInfo
 
 
 @bot.message_handler(func=lambda message: message.text == "Show tickets" and GetUserStatus(message.chat.id) == user_idle)
@@ -55,6 +56,8 @@ def ActivateTicketHandler(message):
 
 @bot.message_handler(func=lambda message: message.text == "Create ticket (adm)" and GetUserStatus(message.chat.id) == user_idle and IsUserAdmin(message.chat.id))
 def CreateTicketHandler(message):
+    logger.info("User " + BasicUserInfo(message) + " started creating ticket")
+
     bot.send_message(
         message.chat.id, "Enter name of the event or use keyboard", reply_markup=GetWaitingInputKeyboard(message.chat.id))
     SetUserStatus(message.chat.id, admin_creating_ticket)
@@ -63,8 +66,10 @@ def CreateTicketHandler(message):
 @bot.message_handler(func=lambda message: GetUserStatus(message.chat.id) == admin_creating_ticket)
 def CreateTicketHandler(message):
     if SecurityFileCheck(message) == 1:
+        logger.critical("User " + BasicUserInfo(message) + " tried to create ticket with forbidden symbols")
         return
     elif os.path.exists(botDirectory + botTicketsDirectory + str(message.text)):
+        logger.info("User " + BasicUserInfo(message) + " tried to create ticket with existing name")
         bot.send_message(
             message.chat.id, "Sorry, such event is already exist")
         return
@@ -72,10 +77,13 @@ def CreateTicketHandler(message):
         ticketFile.write("Active\n")
     bot.send_message(message.chat.id, "Created!", reply_markup=GetTicketsMenuKeyboard(message.chat.id))
     SetUserStatus(message.chat.id, user_idle)
+    logger.info("User " + BasicUserInfo(message) + " created ticket '" + str(message.text) + "'")
 
 
 @bot.message_handler(func=lambda message: message.text == "Delete ticket (adm)" and GetUserStatus(message.chat.id) == user_idle and IsUserAdmin(message.chat.id))
 def DeleteTicketHandler(message):
+    logger.info("User " + BasicUserInfo(message) + " started deleting ticket")
+
     if IsThereTickets() == 0:
         bot.send_message(
             message.chat.id, "no tickets found", reply_markup=GetTicketsMenuKeyboard(message.chat.id))
@@ -88,8 +96,10 @@ def DeleteTicketHandler(message):
 @bot.message_handler(func=lambda message: GetUserStatus(message.chat.id) == admin_deleting_ticket)
 def DeleteTicketHandler(message):
     if SecurityFileCheck(message) == 1:
+        logger.critical("User " + BasicUserInfo(message) + " tried to delete ticket with forbidden symbols (possible attack)")
         return
     if os.path.exists(botDirectory + botTicketsDirectory + str(message.text)):
+        logger.warning("User " + BasicUserInfo(message) + " deleted ticket '" + str(message.text) + "'")
         os.remove(botDirectory + botTicketsDirectory + str(message.text))
         bot.send_message(message.chat.id, "Deleted!",
                          reply_markup=GetTicketsMenuKeyboard(message.chat.id))
@@ -97,16 +107,19 @@ def DeleteTicketHandler(message):
         return
     else:
         bot.send_message(message.chat.id, "File not found")
+        logger.info("User " + BasicUserInfo(message) + " tried to delete ticket which not exist")
 
 
 @bot.message_handler(func=lambda message: message.text == "Start random (adm)" and GetUserStatus(message.chat.id) == user_idle and IsUserAdmin(message.chat.id))
 def StartRandomHandler(message):
     if IsThereTickets() == 0:
         bot.send_message(message.chat.id, "There is no tickets")
+        logger.info("User " + BasicUserInfo(message) + " tried to start random with no tickets")
         return
     SetUserStatus(message.chat.id, admin_starting_random)
     bot.send_message(message.chat.id, "Select ticket which you should activate (keyboard)",
                      reply_markup=GetTicketsKeyboard(message, 3))
+    logger.info("User " + BasicUserInfo(message) + " starting random")
 
 
 # TODO: make another notifications and create for them another folder
@@ -127,17 +140,21 @@ def Notification(fileName):
 @bot.message_handler(func=lambda message: GetUserStatus(message.chat.id) == admin_starting_random)
 def RandomTicketHandler(message):
     if SecurityFileCheck(message) == 1:
+        logger.critical("User " + BasicUserInfo(message) + " tried to start random with forbidden symbols (possible attack)")
         return
     elif not os.path.exists(botDirectory + botTicketsDirectory + message.text):
+        logger.info("User " + BasicUserInfo(message) + " tried to start random with not existing ticket")
         bot.send_message(message.chat.id, "Ticket does not exist")
         return
     # checking some conditions
     with open(botDirectory + botTicketsDirectory + message.text, "r") as preRandom:
         if not preRandom.readline() == "Active\n":
+            logger.info("User " + BasicUserInfo(message) + " tried to start random with not active ticket")
             bot.send_message(
                 message.chat.id, "This ticket is already randomized")
             return
         if preRandom.readline() == "":
+            logger.info("User " + BasicUserInfo(message) + " tried to start random with empty ticket")
             bot.send_message(
                 message.chat.id, "there is no users for random")
             return
@@ -149,3 +166,4 @@ def RandomTicketHandler(message):
                      reply_markup=GetTicketsMenuKeyboard(message.chat.id))
     Notification(message.text)
     SetUserStatus(message.chat.id, user_idle)
+    logger.info("User " + BasicUserInfo(message) + " started random for ticket '" + str(message.text) + "'")
